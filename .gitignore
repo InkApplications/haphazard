@@ -1,0 +1,19 @@
+# Build files
+/composer.lock
+/composer.phar
+/build/
+/app/phpunit.xml
+/app/config/parameters.yml
+/web/.htaccess
+/build.properties
+
+
+# IDE specific project files
+.nbproject
+*.iml
+*.ipr
+*.iws
+.idea/
+.classpath
+.project
+

@@ -112,7 +112,7 @@ this library provides an easy way to make assertions using a specified role.</p>
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertGet</span><span class="p">(</span><span class="s1">'product-edit'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'productId'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">200</span><span class="p">);</span>
 
         <span class="c1">// Disallow Anonymous users</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">login</span><span class="p">(</span><span class="nx">HaphazardTestCase</span><span class="o">::</span><span class="na">LOGIN_CLEAR</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">clearLogin</span><span class="p">();</span>
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertGet</span><span class="p">(</span><span class="s1">'product-edit'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'productId'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">403</span><span class="p">);</span>
     <span class="p">}</span>
 </pre></div>

@@ -10,6 +10,7 @@ namespace Ink\Haphazard\TestCase;
 
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 
 /**
  * Haphazard Test Case
@@ -22,6 +23,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 abstract class HaphazardTestCase extends WebTestCase
 {
+    const LOGIN_ANON = 0;
+
     private $client;
 
     protected function assertGet($route, $parameters = [], $status = 200)
@@ -32,6 +35,25 @@ abstract class HaphazardTestCase extends WebTestCase
 
         $responseStatus = $this->getClient()->getResponse()->getStatusCode();
         $this->assertSame($status, $responseStatus);
+    }
+
+    protected function login($role = self::LOGIN_ANON)
+    {
+        $session = $this->getClient()->getContainer()->get('session');
+
+        $firewall = 'secured_area';
+
+        if (static::LOGIN_ANON === $role) {
+            $session->set('_security_' . $firewall, null);
+            return;
+        }
+
+        $token = new UsernamePasswordToken('test_user', null, $firewall, [$role]);
+        $session->set('_security_' . $firewall, serialize($token));
+        $session->save();
+
+        $cookie = new Cookie($session->getName(), $session->getId());
+        $this->getClient()->getCookieJar()->set($cookie);
     }
 
     protected final function getClient()

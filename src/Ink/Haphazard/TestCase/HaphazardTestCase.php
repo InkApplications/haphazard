@@ -26,12 +26,6 @@ use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 abstract class HaphazardTestCase extends WebTestCase
 {
     /**
-     * Clear login flag, will unset any roles to the logged in user by
-     * completely unsetting the token from the security context.
-     */
-    const LOGIN_CLEAR = 'HAPHAZARD_LOGIN_CLEAR';
-
-    /**
      * @var Client The browser simulator.
      */
     private $client;
@@ -68,6 +62,19 @@ abstract class HaphazardTestCase extends WebTestCase
     }
 
     /**
+     * Clear Login
+     *
+     * Clear login flag, will unset any roles to the logged in user by
+     * completely unsetting the token from the security context.
+     */
+    protected function clearLogin()
+    {
+        $session = $this->getClient()->getContainer()->get('session');
+        $firewall = 'secured_area';
+        $session->set('_security_' . $firewall, null);
+    }
+
+    /**
      * Login
      *
      * Fakes a logged in role with the application's security context.
@@ -75,16 +82,11 @@ abstract class HaphazardTestCase extends WebTestCase
      * @param string $role The role id string to give to the user role. This
      *    can be any role identification string, such as 'ROLE_ADMIN'
      */
-    protected function login($role = self::LOGIN_CLEAR)
+    protected function login($role)
     {
         $session = $this->getClient()->getContainer()->get('session');
 
         $firewall = 'secured_area';
-
-        if (static::LOGIN_CLEAR === $role) {
-            $session->set('_security_' . $firewall, null);
-            return;
-        }
 
         $token = new UsernamePasswordToken('test_user', null, $firewall, [$role]);
         $session->set('_security_' . $firewall, serialize($token));

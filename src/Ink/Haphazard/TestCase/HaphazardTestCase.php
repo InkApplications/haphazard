@@ -42,6 +42,7 @@ abstract class HaphazardTestCase extends WebTestCase
      *     key => value format.
      *
      *     example:
+     *
      *     ~~~
      *         array(
      *             'product_id' => 1,
@@ -51,7 +52,7 @@ abstract class HaphazardTestCase extends WebTestCase
      * @param int $status (optional) [Default: 200] The Response code that was
      *     expected back from the request. Typically 200 or 403.
      */
-    protected function assertGet($route, $parameters = [], $status = 200)
+    protected function assertGet($route, $parameters = array(), $status = 200)
     {
         $url = $this->getRouter()->generate($route, $parameters);
 

@@ -82,12 +82,12 @@ abstract class HaphazardTestCase extends WebTestCase
      *
      * @param string $role The role id string to give to the user role. This
      *    can be any role identification string, such as 'ROLE_ADMIN'
+     * @param string $firewal The name of the firewall.  Defaults to
+     *    'secured_area' to prevent BC breaks.
      */
-    protected function login($role)
+    protected function login($role, $firewall = 'secured_area')
     {
         $session = $this->getClient()->getContainer()->get('session');
-
-        $firewall = 'secured_area';
 
         $token = new UsernamePasswordToken('test_user', null, $firewall, [$role]);
         $session->set('_security_' . $firewall, serialize($token));

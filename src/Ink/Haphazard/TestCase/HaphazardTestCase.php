@@ -12,7 +12,11 @@ use Symfony\Bundle\FrameworkBundle\Client;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\SecurityContext;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * Haphazard Test Case
@@ -29,6 +33,32 @@ abstract class HaphazardTestCase extends WebTestCase
      * @var Client The browser simulator.
      */
     private $client;
+
+    /**
+     * @var string The User provider used for the application firewall
+     */
+    private $providerClass;
+
+    /**
+     * @var string The name of the application firewall
+     */
+    private $firewall;
+
+    /**
+     * Constructor
+     *
+     * @param string $provider The User provider used for the application
+     *     firewall. (Default: fos_user.user_provider.username)
+     * @param string $firewall The name of the firewall. (Default: secured_area)
+     */
+    public function __construct(
+        $provider = 'fos_user.user_provider.username',
+        $firewall = 'secured_area'
+    )
+    {
+        $this->providerClass = $provider;
+        $this->firewall = $firewall;
+    }
 
     /**
      * Assert Get
@@ -63,38 +93,29 @@ abstract class HaphazardTestCase extends WebTestCase
     }
 
     /**
-     * Clear Login
+     * Login
      *
-     * Clear login flag, will unset any roles to the logged in user by
-     * completely unsetting the token from the security context.
+     * Fakes a logged in user with the application's security context.
+     *
+     * WARNING: Using this method will force a refresh of the client!
+     *
+     * @param UserInterface $user The user to login as.
      */
-    protected function clearLogin()
+    protected function login(UserInterface $user)
     {
-        $session = $this->getClient()->getContainer()->get('session');
-        $firewall = 'secured_area';
-        $session->set('_security_' . $firewall, null);
+        $this->refreshClient();
+        $this->setupMockProvider($user);
+        $this->setupSessionCookie($user);
     }
 
     /**
-     * Login
+     * Refresh Client
      *
-     * Fakes a logged in role with the application's security context.
-     *
-     * @param string $role The role id string to give to the user role. This
-     *    can be any role identification string, such as 'ROLE_ADMIN'
-     * @param string $firewal The name of the firewall.  Defaults to
-     *    'secured_area' to prevent BC breaks.
+     * Creates a new Client object context to use.
      */
-    protected function login($role, $firewall = 'secured_area')
+    protected function refreshClient()
     {
-        $session = $this->getClient()->getContainer()->get('session');
-
-        $token = new UsernamePasswordToken('test_user', null, $firewall, [$role]);
-        $session->set('_security_' . $firewall, serialize($token));
-        $session->save();
-
-        $cookie = new Cookie($session->getName(), $session->getId());
-        $this->getClient()->getCookieJar()->set($cookie);
+        $this->client = static::createClient();
     }
 
     /**
@@ -103,15 +124,26 @@ abstract class HaphazardTestCase extends WebTestCase
      * Gets the HTTP simulator client, creating it if it does not currently
      * exist.
      *
+     * @param bool $refresh Whether to force a new client to be created
      * @return Client The HTTP simulator
      */
-    protected final function getClient()
+    final protected function getClient($refresh = false)
     {
-        if (null === $this->client) {
-            $this->client = static::createClient();
+        if (null === $this->client || true === $refresh) {
+            $this->refreshClient();
         }
 
         return $this->client;
+    }
+
+    /**
+     * Get Container
+     *
+     * @return ContainerInterface Symfony's DI container
+     */
+    final protected function getContainer()
+    {
+        return $this->getClient()->getContainer();
     }
 
     /**
@@ -121,12 +153,74 @@ abstract class HaphazardTestCase extends WebTestCase
      *
      * @return Router The Symfony Routing service
      */
-    private function getRouter()
+    final protected function getRouter()
     {
-        $client = $this->getClient();
-        $container = $client->getContainer();
+        $container = $this->getContainer();
         $router = $container->get('router');
 
         return $router;
+    }
+
+    /**
+     * Get Security Context
+     *
+     * @return SecurityContext
+     */
+    private function getSecurityContext()
+    {
+        return $this->getContainer()->get('security.context');
+    }
+
+    /**
+     * Setup Session Cookie
+     *
+     * @param UserInterface $user The user being logged in as
+     */
+    private function setupSessionCookie(UserInterface $user)
+    {
+        $session = $this->getContainer()->get('session');
+        $token = new UsernamePasswordToken(
+            $user,
+            null,
+            $this->firewall,
+            $user->getRoles()
+        );
+        $session->set('_security_' . $this->firewall, serialize($token));
+        $session->save();
+
+        $cookie = new Cookie($session->getName(), $session->getId());
+        $this->client->getCookieJar()->set($cookie);
+    }
+
+    /**
+     * Setup Mock Provider
+     *
+     * Injects a mock Security User Provider into the DI container based on the
+     * service key provided on construction.
+     *
+     * @param UserInterface $user The user being logged in as
+     */
+    private function setupMockProvider(UserInterface $user)
+    {
+        $mockProvider = $this->getMock('Symfony\Component\Security\Core\User\UserProviderInterface');
+
+        $mockProvider->expects($this->any())
+            ->method('refreshUser')
+            ->will(
+                $this->returnValue($user)
+            );
+        $mockProvider->expects($this->any())
+            ->method('loadUserByUsername')
+            ->with($this->equalTo($user->getUsername()))
+            ->will(
+                $this->returnValue($user)
+            );
+        $mockProvider->expects($this->any())
+            ->method('supportsClass')
+            ->will(
+                $this->returnValue(true)
+            );
+
+        $this->getContainer()->set($this->providerClass, $mockProvider);
     }
 }

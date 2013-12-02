@@ -70,10 +70,11 @@ this library provides an easy way to make assertions using a specified role.
     public function testEditAction()
     {
         // Allow our Admin role
-        $this->login('ROLE_ADMIN');
+        $user = new User();
+        $this->login($user);
         $this->assertGet('product-edit', ['productId' => 1], 200);
 
         // Disallow Anonymous users
-        $this->clearLogin();
+        $this->refreshClient();
         $this->assertGet('product-edit', ['productId' => 1], 403);
     }

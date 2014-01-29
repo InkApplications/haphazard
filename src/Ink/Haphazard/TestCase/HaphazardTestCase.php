@@ -13,7 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\SecurityContext;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -53,9 +52,12 @@ abstract class HaphazardTestCase extends WebTestCase
      */
     public function __construct(
         $provider = 'fos_user.user_provider.username',
-        $firewall = 'secured_area'
-    )
-    {
+        $firewall = 'secured_area',
+        $name = null,
+        array $data = array(),
+        $dataName = ''
+    ) {
+        parent::__construct($name, $data, $dataName);
         $this->providerClass = $provider;
         $this->firewall = $firewall;
     }

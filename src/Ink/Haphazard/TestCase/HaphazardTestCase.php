@@ -51,11 +51,11 @@ abstract class HaphazardTestCase extends WebTestCase
      * @param string $firewall The name of the firewall. (Default: secured_area)
      */
     public function __construct(
-        $provider = 'fos_user.user_provider.username',
-        $firewall = 'secured_area',
         $name = null,
         array $data = array(),
-        $dataName = ''
+        $dataName = '',
+        $provider = 'fos_user.user_provider.username',
+        $firewall = 'secured_area'
     ) {
         parent::__construct($name, $data, $dataName);
         $this->providerClass = $provider;

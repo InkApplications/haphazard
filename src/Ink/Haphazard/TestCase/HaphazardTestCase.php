@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\SecurityContext;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -89,6 +90,34 @@ abstract class HaphazardTestCase extends WebTestCase
         $url = $this->getRouter()->generate($route, $parameters);
 
         $this->getClient()->request('GET', $url);
+
+        $responseStatus = $this->getClient()->getResponse()->getStatusCode();
+        $this->assertSame($status, $responseStatus);
+    }
+
+    /**
+     * Assert form submissions
+     *
+     * @param Crawler $crawler Symfony DomCrawler which makes traversing the DOM
+     *     easier.
+     * @param array $parameters (optional) An array of form fields.  The value
+     *     of each element will be set to the appropriate form field.
+     * @param int $status (optional) The expected response code.  Defaults to
+     *     302 for form submissions.
+     * @param string $selectButton (optional) The string that will be searched
+     *     for to define the select button.
+     */
+    protected function assertSubmit(
+        Crawler $crawler,
+        array $parameters = array(),
+        $status = 302,
+        $selectButton = 'submit'
+    ) {
+        $this->mockCsrfProvider();
+
+        // get the form and submit
+        $form = $crawler->selectButton($selectButton)->form($parameters);
+        $this->getClient()->submit($form);
 
         $responseStatus = $this->getClient()->getResponse()->getStatusCode();
         $this->assertSame($status, $responseStatus);
@@ -224,5 +253,26 @@ abstract class HaphazardTestCase extends WebTestCase
             );
 
         $this->getContainer()->set($this->providerClass, $mockProvider);
+    }
+
+    /**
+     * Setup Mock Csrf Provider
+     *
+     * Override the container's csrf provider to always return true.  This
+     * is necessary because after the first request is made (to get the
+     * crawler), the user is logged out and must log in again.  This will
+     * invalidate the csrf token that was previously generated for the form.
+     */
+    private function mockCsrfProvider()
+    {
+        $mockCsrfProvider = $this->getMockBuilder('Symfony\Component\Form\Extension\Csrf\CsrfProvider\DefaultCsrfProvider')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mockCsrfProvider->expects($this->any())
+            ->method('isCsrfTokenValid')
+            ->will($this->returnValue(true));
+
+        $this->getContainer()->set('form.csrf_provider', $mockCsrfProvider);
     }
 }

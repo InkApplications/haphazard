@@ -17,8 +17,9 @@ Usage
 ### Simple page load test
 
 When all you want to test is that the page at *least* loads properly, you can
-use the `HaphazardTestCase::assertGet()` method. This will create a web client
-and assert that a response code of 200 is returned for the page.
+use the `HaphazardTestCase::assertGet()` or `HaphazardTestCase::assertPost()`
+methods. This will create a web client and assert that a response code of 200
+is returned for the page.
 
     use Ink\Haphazard\TestCase\HaphazardTestCase;
 
@@ -31,6 +32,14 @@ and assert that a response code of 200 is returned for the page.
         {
             $this->assertGet('index');
         }
+
+        /**
+         * Test Post Action
+         */
+         public function testCreatePostAction()
+         {
+             $this->assertPost('create');
+         }
     }
 
 ### Page with parameters
@@ -45,11 +54,32 @@ If the page you're testing requires parameters, you can pass those in as well.
         $this->assertGet('product-view', ['productId' => 1]);
     }
 
+    /**
+     * Test Edit Action
+     */
+     public function testEditAction()
+     {
+         $this->assertPost('product-edit', ['productId' => 1]);
+     }
+
+### Page with a Post body
+
+If you need to send additional parameters along with your POST request, you can
+send them along.
+
+    /**
+     * Test Edit Action
+     */
+     public function testEditAction()
+     {
+         $this->assertPost('product-edit', ['productId' => 1], ['product-name' => 'Acme Product']);
+     }
+
 ### Different Status codes
 
 Occasionally you will want to test that pages return a different status code,
 for example a 403 / Forbidden status code when an anonymous user should *not*
-be able to access a given page.
+be able to access a given page, or a 302 when the page redirects.
 
     /**
      * Test Edit Action
@@ -58,6 +88,14 @@ be able to access a given page.
     {
         $this->assertGet('product-edit', ['productId' => 1], 403);
     }
+
+    /**
+     * Test Edit Action
+     */
+     public function testEditAction()
+     {
+         $this->assertPost('product-edit', ['productId' => 1], ['product-name' => 'Acme Product'], 302);
+     }
 
 ### Spoof Authentication Role
 

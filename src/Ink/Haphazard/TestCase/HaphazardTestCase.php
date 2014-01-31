@@ -8,6 +8,7 @@
 
 namespace Ink\Haphazard\TestCase;
 
+use Ink\Haphazard\HttpMethods;
 use Symfony\Bundle\FrameworkBundle\Client;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -93,6 +94,43 @@ abstract class HaphazardTestCase extends WebTestCase
 
         $responseStatus = $this->getClient()->getResponse()->getStatusCode();
         $this->assertSame($status, $responseStatus);
+    }
+
+    /**
+     * Assert that a request matches the expected response code
+     *
+     * @param string $method The HTTP request method.
+     * @param string $routeName The Symfony named route.
+     * @param array $routeParameters Parameters that will be added to the route
+     *     url.  Url will be built with the router generate method.
+     * @param array $postParameters Parameters to pass as $_POST.
+     * @param int $expectedStatus The expected response code after performing a
+     *     request.
+     * @param array $files An array of files
+     * @param array $server The server parameters (HTTP headers are referenced
+     *     with a HTTP_ prefix as PHP does)
+     * @param null $content The raw body data
+     * @param bool $changeHistory Whether to update the history or not (only
+     *     used internally for back(), forward(), and reload())
+     */
+    protected function assertRequest(
+        $method,
+        $routeName,
+        array $routeParameters = array(),
+        array $postParameters = array(),
+        $expectedStatus = 200,
+        array $files = array(),
+        array $server = array(),
+        $content = null,
+        $changeHistory = true
+    ) {
+        $method = HttpMethods::valueOf($method);
+        $url = $this->getRouter()->generate($routeName, $routeParameters);
+
+        $this->getClient()->request($method, $url, $postParameters, $files, $server, $content, $changeHistory);
+
+        $responseStatus = $this->getClient()->getResponse()->getStatusCode();
+        $this->assertSame($expectedStatus, $responseStatus);
     }
 
     /**

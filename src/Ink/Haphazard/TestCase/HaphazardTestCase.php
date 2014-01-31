@@ -48,6 +48,9 @@ abstract class HaphazardTestCase extends WebTestCase
     /**
      * Constructor
      *
+     * @param string|null $name the name of the Test Suite
+     * @param array $data
+     * @param string $dataName
      * @param string $provider The User provider used for the application
      *     firewall. (Default: fos_user.user_provider.username)
      * @param string $firewall The name of the firewall. (Default: secured_area)
@@ -65,35 +68,55 @@ abstract class HaphazardTestCase extends WebTestCase
     }
 
     /**
-     * Assert Get
+     * Assert request is a GET request
      *
-     * Asserts the response code of a web request matches what was expected.
+     * Forwards to the assertRequest() method
      *
-     * @param string $route The name of the controller route to test. such as
-     *     'default' or 'index'.
-     * @param array $parameters (optional) Parameters to pass into the route
-     *     when resolving by name. The route parameters should be in
-     *     key => value format.
+     * @see assertRequest()
      *
-     *     example:
-     *
-     *     ~~~
-     *         array(
-     *             'product_id' => 1,
-     *             'page' => 3,
-     *         );
-     *     ~~~
-     * @param int $status (optional) [Default: 200] The Response code that was
-     *     expected back from the request. Typically 200 or 403.
+     * @param string $routeName
+     * @param array $routeParameters
+     * @param int $expectedStatus
      */
-    protected function assertGet($route, $parameters = array(), $status = 200)
-    {
-        $url = $this->getRouter()->generate($route, $parameters);
+    protected function assertGet(
+        $routeName,
+        array $routeParameters = array(),
+        $expectedStatus = 200
+    ) {
+        $this->assertRequest(
+            HttpMethods::GET,
+            $routeName,
+            $routeParameters,
+            array(),
+            $expectedStatus
+        );
+    }
 
-        $this->getClient()->request('GET', $url);
-
-        $responseStatus = $this->getClient()->getResponse()->getStatusCode();
-        $this->assertSame($status, $responseStatus);
+    /**
+     * Assert request is a POST request
+     *
+     * Forwards to the assertRequest() method
+     *
+     * @see assertRequest()
+     *
+     * @param string $routeName
+     * @param array $routeParameters
+     * @param array $postParameters
+     * @param int $expectedStatus
+     */
+    protected function assertPost(
+        $routeName,
+        array $routeParameters = array(),
+        array $postParameters = array(),
+        $expectedStatus = 200
+    ) {
+        $this->assertRequest(
+            HttpMethods::POST,
+            $routeName,
+            $routeParameters,
+            $postParameters,
+            $expectedStatus
+        );
     }
 
     /**
@@ -103,6 +126,11 @@ abstract class HaphazardTestCase extends WebTestCase
      * @param string $routeName The Symfony named route.
      * @param array $routeParameters Parameters that will be added to the route
      *     url.  Url will be built with the router generate method.
+     *     example usage:
+     *         array(
+     *             'product_id' => 1,
+     *             'page' => 3,
+     *         );
      * @param array $postParameters Parameters to pass as $_POST.
      * @param int $expectedStatus The expected response code after performing a
      *     request.

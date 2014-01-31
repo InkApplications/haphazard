@@ -124,7 +124,6 @@ abstract class HaphazardTestCase extends WebTestCase
         $content = null,
         $changeHistory = true
     ) {
-        $method = HttpMethods::valueOf($method);
         $url = $this->getRouter()->generate($routeName, $routeParameters);
 
         $this->getClient()->request($method, $url, $postParameters, $files, $server, $content, $changeHistory);

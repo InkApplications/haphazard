@@ -15,6 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\SecurityContext;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -215,6 +216,27 @@ abstract class HaphazardTestCase extends WebTestCase
     }
 
     /**
+     * Create User Token
+     *
+     * Factory method for creating a User Token object for the firewall based on
+     * the user object provided. By default it will be a Username/Password
+     * Token based on the user's credentials, but may be overridden for custom
+     * tokens in your applications.
+     *
+     * @param UserInterface $user The user object to base the token off of
+     * @return TokenInterface The token to be used in the security context
+     */
+    protected function createUserToken(UserInterface $user)
+    {
+        return new UsernamePasswordToken(
+            $user,
+            null,
+            $this->firewall,
+            $user->getRoles()
+        );
+    }
+
+    /**
      * Get Client
      *
      * Gets the HTTP simulator client, creating it if it does not currently
@@ -275,12 +297,7 @@ abstract class HaphazardTestCase extends WebTestCase
     private function setupSessionCookie(UserInterface $user)
     {
         $session = $this->getContainer()->get('session');
-        $token = new UsernamePasswordToken(
-            $user,
-            null,
-            $this->firewall,
-            $user->getRoles()
-        );
+        $token = $this->createUserToken($user);
         $session->set('_security_' . $this->firewall, serialize($token));
         $session->save();
 
